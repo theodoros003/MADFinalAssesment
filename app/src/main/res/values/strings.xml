@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MADFinalAssesment</string>
+    <string name="addRest">Add Restaurant in your current Location</string>
+    <string name="addRestBtn">Add Restaurant</string>
 </resources>
