@@ -15,17 +15,26 @@ import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import java.util.ArrayList;
 
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.ItemizedIconOverlay;
+import org.osmdroid.views.overlay.OverlayItem;
+
+import java.util.ArrayList;
 
 
 public class MainActivity extends Activity implements LocationListener
 {
     MapView mv;
+    ItemizedIconOverlay<OverlayItem> items;
+    ItemizedIconOverlay.OnItemGestureListener<OverlayItem> markerGestureListener;
+    ArrayList<RestaurantArray> restaurants = new ArrayList<>();
+
 
     Double lat = 51.05;
     Double lon = -0.72;
@@ -36,15 +45,18 @@ public class MainActivity extends Activity implements LocationListener
 
 
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+
+
+
+        LocationManager mgr=(LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,this);
 
         mv = (MapView)findViewById(R.id.map1);
         mv.setBuiltInZoomControls(true);
         mv.getController().setZoom(16);
 
-
-        LocationManager mgr=(LocationManager)getSystemService(Context.LOCATION_SERVICE);
-        mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,this);
 
         TextView la = (TextView)findViewById(R.id.la1);
         TextView vla = (TextView)findViewById(R.id.vla1);
@@ -53,6 +65,31 @@ public class MainActivity extends Activity implements LocationListener
         //vla.setText(lat.toString());
         //vlo.setText(lon.toString());
 
+        markerGestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>()
+        {
+            public boolean onItemLongPress(int i, OverlayItem item)
+            {
+                Toast.makeText(MainActivity.this, item.getSnippet(), Toast.LENGTH_SHORT).show();
+                return true;
+            }
+
+            public boolean onItemSingleTapUp(int i, OverlayItem item)
+            {
+                Toast.makeText(MainActivity.this, item.getSnippet(), Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        };
+
+        items = new ItemizedIconOverlay<OverlayItem>(this, new ArrayList<OverlayItem>(), markerGestureListener);
+        OverlayItem fernhurst = new OverlayItem("Fernhurst", "the village of Fernhurst", new GeoPoint(51.05, -0.72));
+
+        // NOTE is just this.getDrawable() if supporting API 21+ only
+        fernhurst.setMarker(getResources().getDrawable(R.drawable.marker));
+        items.addItem(fernhurst);
+        items.addItem(new OverlayItem("Blackdown", "highest point in West Sussex", new GeoPoint(51.0581, -0.6897)));
+        mv.getOverlays().add(items);
+
+
     }
 
     public void onLocationChanged(Location newLoc)
@@ -60,10 +97,10 @@ public class MainActivity extends Activity implements LocationListener
         mv.getController().setCenter(new GeoPoint(newLoc.getLatitude(), newLoc.getLongitude()));
         lat = Double.parseDouble(String.valueOf(newLoc.getLatitude()));
         lon = Double.parseDouble(String.valueOf(newLoc.getLongitude()));
-        //Toast.makeText
-         //       (this, "Location=" +
-          //              newLoc.getLatitude()+ " " +
-          //              newLoc.getLongitude() , Toast.LENGTH_LONG).show();
+        Toast.makeText
+                (this, "Location=" +
+                        newLoc.getLatitude()+ " " +
+                        newLoc.getLongitude() , Toast.LENGTH_LONG).show();
     }
 
     public void onProviderDisabled(String provider)
@@ -92,28 +129,27 @@ public class MainActivity extends Activity implements LocationListener
     }
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        if(item.getItemId() == R.id.addRestaurant)
+        if(item.getItemId() == R.id.addRest)
         {
-            Intent intent = new Intent(this,AddRestaurant.class);
-            startActivityForResult(intent,0);
+
             return true;
         }
         return false;
     }
     protected void onActivityResult(int requestCode,int resultCode,Intent intent) {
-        if (requestCode == 0) {
-            if (resultCode==RESULT_OK)
-            {
-                Bundle extras=intent.getExtras();
-                Double lat = extras.getDouble("com.example.latitude");
-                Double lon = extras.getDouble("com.example.longitude");
+    if (requestCode == 0) {
+        if (resultCode==RESULT_OK)
+        {
+            Bundle extras=intent.getExtras();
+            String name = extras.getString("com.example.name");
+            String address = extras.getString("com.example.address");
+            String cuisine = extras.getString("com.example.cuisine");
+            int rating = extras.getInt("com.example.rating");
 
-                mv.getController().setCenter(new GeoPoint(lat,lon));
-                TextView vla = (TextView)findViewById(R.id.vla1);
-                vla.setText(lat.toString());
-                TextView vlo = (TextView)findViewById(R.id.vlo1);
-                vlo.setText(lon.toString());
-            }
+            restaurants.add(new RestaurantArray(name, address, cuisine, rating, lat, lon));
+            OverlayItem restaurant = new OverlayItem("Name:"+name,"Address:"+address,"Cuisine"+cuisine,"Rating:"+rating, new GeoPoint(lat,lon));
+            items.addItem(restaurant);
         }
     }
+}
 }
