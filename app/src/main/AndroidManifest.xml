@@ -24,6 +24,7 @@
         </activity>
         <activity android:name=".AddRestaurant" android:label="@string/addRest">
         </activity>
+        <activity android:name=".Preference" ></activity>
     </application>
 
 </manifest>
